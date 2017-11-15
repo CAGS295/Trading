@@ -22,4 +22,5 @@ hola2<-2
 =======
 a=1;
 >>>>>>> 0d419e89ac35df149bd1ae8ef2e901aea130e69f
-carlos<-2547
+
+lupita<-1075
