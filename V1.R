@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
 ##### Paqueterias
@@ -90,6 +91,8 @@ jguyuyyuly<-2
 
 =======
 
+=======
+>>>>>>> b83418a58ce9f09c24112e5fdec5bd98e167e75b
 
 ##### Paqueterias
 pkg <- c("base","downloader","dplyr","fBasics","forecast","grid",
@@ -106,8 +109,11 @@ instpackages <- lapply(pkg, library, character.only=TRUE)
 RawGitHub <- "https://raw.githubusercontent.com/IFFranciscoME/"
 ROandaAPI <- paste(RawGitHub,"ROandaAPI/master/ROandaAPI.R",sep="")
 downloader::source_url(ROandaAPI,prompt=FALSE,quiet=TRUE)
+<<<<<<< HEAD
 
 
 hiii<-34
 khhkk<- 78
 >>>>>>> 88acfa4eb8b5f13fd9badac151d3048f9c56d6b4
+=======
+>>>>>>> b83418a58ce9f09c24112e5fdec5bd98e167e75b
