@@ -15,3 +15,5 @@ instpackages <- lapply(pkg, library, character.only=TRUE)
 RawGitHub <- "https://raw.githubusercontent.com/IFFranciscoME/"
 ROandaAPI <- paste(RawGitHub,"ROandaAPI/master/ROandaAPI.R",sep="")
 downloader::source_url(ROandaAPI,prompt=FALSE,quiet=TRUE)
+
+a=1;
