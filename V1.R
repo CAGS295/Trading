@@ -16,4 +16,8 @@ RawGitHub <- "https://raw.githubusercontent.com/IFFranciscoME/"
 ROandaAPI <- paste(RawGitHub,"ROandaAPI/master/ROandaAPI.R",sep="")
 downloader::source_url(ROandaAPI,prompt=FALSE,quiet=TRUE)
 
+<<<<<<< HEAD
 et
+
+>>>>>>> 51b12c338c93e3bd4ec77839629f5efbc35c1177
+>>>>>>> 5020a004c143464d8e9ea6ee1a36e8d12d3e5546
