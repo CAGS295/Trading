@@ -160,6 +160,11 @@ OrderHandler<-function(direction,exposure=.01){
   ##  exposure porcentaje de margen libre por invertir.
   ##  'check size' hay que sustituirse por el número de lotes de la operación
   ##  Puede ser que solo funciones con lotes enteros, se recomienda redondear si da error
+  ##  hay que plantear una solución para guardar la información sin que consuma mucho tiempo de ejecución
+  ##  se tiene que guardar en un archivo que se pueda recuperar
+  ##  hay que asegurarse que la orden se ejecute solo si hay margen libre para hacerlo, ojo se puede
+  ##  hacer un filtro para que solo se ejecute cuando hay margen disponible o no hacerlo y manejar la excepción con un try o trycatch.
+  ##  
   if(direction=='standby') return();
   ask=InstPos(type,ID,token,inst)
   if(ask$code == 14 || direction == ask$side){
