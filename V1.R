@@ -45,8 +45,8 @@ while(flag1){
         atr_=ATR(s[,3:5],atr)[tr_size,2]
         idx=SMI(s[,3:5],n,d,dd,sig)[(tr_size-3):tr_size,]
         if(atr_>thrsh){
-          STR1(idx)
-          #OrderHandler(STR1(idx),.15)
+          #STR1(idx)
+          OrderHandler(STR1(idx),.15)
         }
       }
     }

@@ -134,6 +134,32 @@ HPrice<-function(AccountType,Granularity,DayAlign,TimeAlign,Token,Instrument,
   return(Prices)
 }
 
+ClosePosition <- function(AccountType, AccountID, Token, Inst)
+{
+  
+  if(AccountType == "practice") {
+    httpaccount <- "https://api-fxpractice.oanda.com"
+  } else 
+    if(AccountType == "live") {
+      httpaccount <- "https://api-fxtrade.oanda.com"
+    } else print("Account type error. Must be practice or live")
+  
+  Queryhttp  <- paste(httpaccount,"/v1/accounts/", sep = "")
+  Queryhttp1 <- paste(Queryhttp,AccountID, sep = "")
+  Queryhttp2 <- paste(Queryhttp1,"/positions/", sep = "")
+  Queryhttp3 <- paste(Queryhttp2,Inst, sep = "")
+  
+  auth  <- c(Authorization = paste("Authorization: Bearer",Token, sep=" "))
+  
+  DELETEPosition <- httpDELETE(Queryhttp3, cainfo=system.file("CurlSSL","cacert.pem",
+                                                              package="RCurl"), httpheader=auth)
+  FinalData  <- fromJSON(DELETEPosition, simplifyDataFrame = TRUE)
+  
+  return(FinalData)
+}
+
+
+
 InstPos<-function(AccountType,AccountID,Token)
 {
   
@@ -175,14 +201,11 @@ Acc_info<-function(AccountType,AccountID,Token)
 
 
 
-
-
 OrderHandler<-function(direction,rate=.15,margin=.025){
    
    try({if(direction=='standby') return();
      ask=InstPos(type,ID,token)$positions$side
-     if(is.null(ask)) nulo=TRUE
-     if(!nulo &&  direction == ask){
+     if(is.null(ask) ||  direction == ask){
        size=Acc_info(type,ID,token)$marginAvail*rate/margin;
        Norder(type,ID,token,OrderType = 'market',inst,formatC(size,format='d'),direction)
      }else {
