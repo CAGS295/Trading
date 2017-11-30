@@ -199,7 +199,12 @@ Acc_info<-function(AccountType,AccountID,Token)
   return(CtaInfoJson)
 }
 
-
+#OrderHandler es la función que se encarga de ejecutar las señales de compra, venta o de mantener, así como de cerrar posiciones. Dicha
+#función ejecuta opciones de compra del 15% del capital disposible, con lo cual se resuelve el problema de terminar con el capital
+#disponible, ya que se estaría creando un ciclo infinito.
+#Dicha función basicamente pregunta si hay operaciones abiertas, si no las hay abre la operación que indica el modelo, si existe una
+#operación pregunta cual es ese, y si resulta que es la misma  vuelve a comprar, pero si es la contraría cierra dicha operación y compra
+#o vende en ese mismo momento, dependiendo de la señal que arroje el modelo.
 
 OrderHandler<-function(direction,rate=.15,margin=.025){
    
