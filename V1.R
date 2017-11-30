@@ -35,8 +35,9 @@ flag1=TRUE;
 
 s=HisPrices(type,grn,align,tz,token,inst,Count = 1)
 while(flag1){
-  tryCatch({aux=HPrice(type,grn,align,tz,token,inst,Count = 1)},error=next())
-  if(s[dim(s)[1],1] != aux[1,1]){
+  aux<-HPrice(type,grn,align,tz,token,inst,Count = 1)
+  #tryCatch({aux<<-HPrice(type,grn,align,tz,token,inst,Count = 1)},error=next())
+  if(s[dim(s)[1],5] != aux[1,5]){
     s=rbind(s,aux)
     if(dim(s)[1] == (tr_size+1)) {s=s[-1,]}
     if(dim(s)[1]>=tr_size){ #modelo
@@ -53,7 +54,8 @@ while(flag1){
 
 
 
-
+aux1<-HPrice(type,grn,align,tz,token,inst,Count = 1)
+aux2<-HPrice(type,grn,align,tz,token,inst,Count = 1)
 
 
 
