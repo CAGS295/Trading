@@ -155,8 +155,29 @@ InstPos<-function(AccountType,AccountID,Token)
   return(InstJson)
 }
 
+Acc_info<-function(AccountType,AccountID,Token)
+{
+  if(AccountType == "practice"){
+    httpaccount <- "https://api-fxpractice.oanda.com"
+  } else 
+    if(AccountType == "live"){
+      httpaccount <- "https://api-fxtrade.oanda.com"
+    } else print("Account type error. Must be practice or live")
+  
+  auth      <- c(Authorization = paste("Bearer",Token,sep=" "))
+  Queryhttp <- paste(httpaccount,"/v1/accounts/",sep="")
+  QueryInfo <- paste(Queryhttp,AccountID,sep="")
+  CtaInfo   <- getURL(QueryInfo,cainfo=system.file("CurlSSL",
+                                                   "cacert.pem",package="RCurl"),httpheader=auth)
+  CtaInfoJson <- fromJSON(CtaInfo, simplifyDataFrame = TRUE)
+  return(CtaInfoJson)
+}
 
-OrderHandler<-function(direction,exposure=.01){
+
+
+
+
+OrderHandler<-function(direction,exposure=.15,margin=.025){
   ##  exposure porcentaje de margen libre por invertir.
   ##  'check size' hay que sustituirse por el número de lotes de la operación
   ##  Puede ser que solo funciones con lotes enteros, se recomienda redondear si da error
@@ -165,21 +186,13 @@ OrderHandler<-function(direction,exposure=.01){
   ##  hay que asegurarse que la orden se ejecute solo si hay margen libre para hacerlo, ojo se puede
   ##  hacer un filtro para que solo se ejecute cuando hay margen disponible o no hacerlo y manejar la excepción con un try o trycatch.
   ##  
+  size=Acc_info(type,ID,token)$marginAvail*exposure/margin;
   if(direction=='standby') return();
   ask=InstPos(type,ID,token,inst)
   if(ask$code == 14 || direction == ask$side){
-    Norder(type,ID,token,OrderType = 'market',inst,'check size',direction)
-    }else Norder(type,ID,token,OrderType = 'market',inst,2*'check size',direction)
-    
+      Norder(type,ID,token,OrderType = 'market',inst,formatC(size,format='d'),direction)
+    }else Norder(type,ID,token,OrderType = 'market',inst,formatC(2*size,format='d'),direction)
+  
 }
-
-
-
-
-
-
-
-
-
 
 

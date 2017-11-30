@@ -4,7 +4,7 @@ pkg <- c("base","downloader","dplyr","fBasics","forecast","grid",
          "gridExtra","httr","jsonlite","lmtest","lubridate","moments",
          "matrixStats", "PerformanceAnalytics","plyr","plotly","quantmod",
          "reshape2","RCurl", "stats","scales","tseries",
-         "TTR","TSA","XML","xts","zoo","yaml","data.table")
+         "TTR","TSA","XML","xts","zoo","yaml","RCurl")
 
 inst <- pkg %in% suppressMessages(installed.packages())
 if(length(pkg[!inst]) > 0) install.packages(pkg[!inst])
@@ -27,7 +27,7 @@ type=conf$ACC_TYPE
 ID= conf$ACC_ID
 token=conf$API_KEY_OANDA
 inst=conf$PAIR   
-#Aux<-AccountInfo(type,ID,token)
+#Aux<-Acc_info(type,ID,token)
 #Model
 #####
 tr_size=n;
@@ -43,7 +43,7 @@ while(flag1){
       atr_=ATR(s[,3:5],atr)[tr_size,2]
       idx=SMI(s[,3:5],n,d,dd,sig)[(tr_size-3):tr_size,]
       if(atr_>thrsh){
-        OrderHandler(STR1(idx), ...)
+        OrderHandler(STR1(idx),.15)
       }
     }
   }
