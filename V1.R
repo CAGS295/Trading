@@ -32,16 +32,17 @@ token=conf$API_KEY_OANDA
 inst=conf$PAIR   
 #Aux<-Acc_info(type,ID,token)
 
-#Aquí inicia el modelo, el cual es un ciclo infinito que descarga un precio historico y lo guarda en la variable s,
-#en el siguiente instante vuelve a pedir otro precio histórico el cual lo compara con el primer precio descargado,
-#si el precio es igual se descarta, pero si es distinto se incluye en la variable aux, la cual será llenada hasta
-#alcanzar el número de variables necesarias para realizar los primeros calculos del modelo. Cuando se llega al límite de 
+#Esta parte de código es la que hace que funcione en tiempo real, el cual consta de un ciclo que se va actualizando, donde descarga 
+#un precio historico y lo guarda en la variable s. En el siguiente instante vuelve a pedir otro precio histórico el cual lo compara 
+#con el primer precio descargado, si el precio es igual se descarta, pero si es distinto se incluye en la variable aux, la cual será 
+#llenada hasta alcanzar el número de variables necesarias para realizar los primeros calculos del modelo. Cuando se llega al límite 
 #de la variable y otro precio histórico cumple la condicion para entrar, se descarta el valor más antiguo y se incluye el nuevo.
 
 #En seguida se calcula el ATR, el cual no es más que un indicador técnico que mide la volatilidad del mercado. Después calculamenos
 #el SMI el cual es índice de momento estocástico, uno de los índices más utilizados al momento de realizar trading, y
 #se define en la variable idx. Posteriormente con un if se condiciona que si el ATR es mayor que la comisión (thrsh) se procede
-#con la función  Order Handler, la cual da las señales de compra, venta o mantener, dependiendo de los paràmetros STR1 e idx.
+#con la función  Order Handler, la cual realiza las señales de compra, venta o mantener, dependiendo de lo que arroje nuestro modelo
+#definido en la función STR1.
 
 #Cabe señalar que el thrsh es un parametro que indica las comisiones por operación, entonces la finalidad del if que incluye al
 #atr_ y al thrsh, es que no se den señales falsas que solo te hagan perdier dinero, sino que se deba cumplir la condición de que
