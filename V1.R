@@ -18,7 +18,7 @@ source('fs.R')
 
 #Params
 #####
-K=100000;n=21;d=3;dd=5;sig=5;atr=5;thrsh=.0000075;upp_lim=35;low_lim=-35;flag=0;lever=50;exposure=.1*lever;
+K=100000;n=21;d=3;dd=5;sig=5;atr=5;thrsh=.00075;upp_lim=35;low_lim=-35;flag=0;lever=50;exposure=.1*lever;
 grn="S5";align=17;tz="America/Mexico_City" 
 #Account
 ##### 
