@@ -1,8 +1,8 @@
 
 #Dicha función es nuestro modelo, el cual se basa en SMI (Stochastic Momentum Index), donde arroja señales de compra,
 #venta o de mantenerse dependiendo del cruce que tengan las medias móviles exponenciales y si cruzan en el momento siguiente los niveles 
-#establecidos como criterio de sobreventa. Se tiene el vector de SMI el cual si en la posición i es mayor que el límite superior y 
-#al mismo tiempo el límite superior es menor que la señal entonces es 1, si el vector SMI en la posición i es menor que el limite inferior
+#establecidos como criterio de sobreventa. Se tiene el vector de SMI el cual si en la posición i es mayor que el limite superior y 
+#al mismo tiempo el l�mite superior es menor que la señal entonces es 1, si el vector SMI en la posición i es menor que el limite inferior
 #y la señal es menor al limite inferior entonces es menos -1, por último si no sucede ninguna de las dos es 0.
 
 #Una vez teniendo dichos valores se prosigue con un if, donde si el intervalo en la posición i-1 es diferente de cero o el intervalo
@@ -211,12 +211,12 @@ Acc_info<-function(AccountType,AccountID,Token)
   return(CtaInfoJson)
 }
 
-#OrderHandler es la función que se encarga de ejecutar las señales de compra, venta o de mantener, así como de cerrar posiciones. Dicha
+#OrderHandler es la función que se encarga de ejecutar las señales de compra, venta o de mantener, asi como de cerrar posiciones. Dicha
 #función ejecuta opciones de compra del 15% del capital disposible, con lo cual se resuelve el problema de terminar con el capital
-#disponible, ya que se estaría creando un ciclo infinito.
+#disponible, ya que se estaria creando un ciclo infinito.
 #Esta funcion se lleva a cabo de manera correcta gracias a que recibe las señales de nuestro modelo propueto.
 #Dicha función basicamente pregunta si hay operaciones abiertas, si no las hay abre la operación que indica el modelo, si existe una
-#operación pregunta cual es ese, y si resulta que es la misma  vuelve a comprar, pero si es la contraría cierra dicha operación y compra
+#operación pregunta cual es ese, y si resulta que es la misma  vuelve a comprar, pero si es la contraria cierra dicha operación y compra
 #o vende en ese mismo momento, dependiendo de la señal que arroje el modelo.
 
 OrderHandler<-function(direction,rate=.15,margin=.025){
