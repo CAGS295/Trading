@@ -19,7 +19,7 @@ source('fs.R')
 
 #Params
 #####
-K=100000;n=21;d=3;dd=5;sig=5;atr=5;thrsh=.00075;upp_lim=35;low_lim=-35;flag=0;lever=50;exposure=.1*lever;
+K=100000;n=21;d=3;dd=5;sig=5;atr=5;thrsh=.000075;upp_lim=35;low_lim=-35;flag=0;lever=50;exposure=.1*lever;
 grn="S5";align=17;tz="America/Mexico_City" 
 
 
@@ -39,7 +39,6 @@ flag1=TRUE;
 
 s=HPrice(type,grn,align,tz,token,inst,Count = 1)
 while(flag1){
-  #
   try({
     aux<-HPrice(type,grn,align,tz,token,inst,Count = 1)
     if(s[dim(s)[1],5] != aux[1,5]){
@@ -48,8 +47,8 @@ while(flag1){
       if(dim(s)[1]>=tr_size){ #modelo
         atr_=ATR(s[,3:5],atr)[tr_size,2]
         idx=SMI(s[,3:5],n,d,dd,sig)[(tr_size-3):tr_size,]
+        #sprintf("ATR: %f\n",atr_)
         if(atr_>thrsh){
-          #STR1(idx)
           OrderHandler(STR1(idx),.15)
         }
       }
