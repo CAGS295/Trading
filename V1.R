@@ -16,12 +16,14 @@ source('fs.R')
 # ROandaAPI <- paste(RawGitHub,"ROandaAPI/master/ROandaAPI.R",sep="")
 # downloader::source_url(ROandaAPI,prompt=FALSE,quiet=TRUE)
 
+#En esta parte se definen los paramentros necesarios para llevar a cabo nuestras estrategias asi como los paramentros de nuestra posicion en la cuenta.
 
 #Params
 #####
 K=100000;n=21;d=3;dd=5;sig=5;atr=5;thrsh=.000075;upp_lim=35;low_lim=-35;flag=0;lever=50;exposure=.1*lever;
 grn="S5";align=17;tz="America/Mexico_City" 
 
+#En esta parte se cargan los parametros de la cuenta, esto con la finalidad de poder realizar operaciones.
 
 #Account
 ##### 
@@ -32,6 +34,22 @@ token=conf$API_KEY_OANDA
 inst=conf$PAIR   
 #Aux<-Acc_info(type,ID,token)
 
+
+#Esta parte de codigo es la que hace que funcione en tiempo real, el cual consta de un ciclo que se va actualizando, donde descarga 
+#un precio historico y lo guarda en la variable s. En el siguiente instante vuelve a pedir otro precio historico el cual lo compara 
+#con el primer precio descargado, si el precio es igual se descarta, pero si es distinto se incluye en la variable aux, la cual sera 
+#llenada hasta alcanzar el numero de variables necesarias para realizar los primeros calculos del modelo. Cuando se llega al limite 
+#de la variable y otro precio historico cumple la condicion para entrar, se descarta el valor mas antiguo y se incluye el nuevo.
+
+#En seguida se calcula el ATR, el cual no es mÃ¡s que un indicador tecnico que mide la volatilidad del mercado. Despues calculamenos
+#el SMI el cual es indice de momento estocastico, uno de los indices mas utilizados al momento de realizar trading, y
+#se define en la variable idx. Posteriormente con un if se condiciona que si el ATR es mayor que la comision (thrsh) se procede
+#con la funcion  Order Handler, la cual realiza las señales de compra, venta o mantener, dependiendo de lo que arroje nuestro modelo
+#definido en la funcion STR1.
+
+#Cabe señalar que el thrsh es un parametro que indica las comisiones por operacion, entonces la finalidad del if que incluye al
+#atr_ y al thrsh, es que no se den señales falsas que solo te hagan perdier dinero, sino que se deba cumplir la condicion de que
+#la volatilidad presente en la operacion sea mayor al costo por operacion.
 #Model
 #####
 tr_size=n;
