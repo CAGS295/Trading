@@ -1,0 +1,495 @@
+---
+title: 'Laboratorio(Numero): Titulo de laboratorio'
+output:
+  html_notebook: default
+  html_document: default
+  pdf_document: default
+---
+
+- **Nombre del alumno(a):** *Carlos Alejandro Gutiérrez Sandoval Armando Díaz González*
+- **Fecha:** *2017-09-16*
+- **Materia:** *Microestructura y sistemas de trading*
+- **Objetivo:** *Automatizar estrategias de trading con análisis técnico.*
+- **Situación de aprendizaje:** *Trading automático*
+- **Repositorio:** *IFFranciscoME*
+
+<style>
+body {
+text-align:justify}
+</style>
+
+
+
+
+##Introducción:
+
+El análisis técnico es una técnica utilizada para prever la dirección futura de las cotizaciones mediante el estudio de datos históricos de los mercados, principalmente las cotizaciones, los volúmenes y el interés abierto.
+
+###Ventajas del Análisis Técnico
+
+Requiere muchos menos datos que el análisis fundamental. A partir de las cotizaciones y los volúmenes, un operador técnico puede obtener toda la información que desea.
+
+Debido a que se centra en identificar inversiones en las tendencias, la cuestión sobre cuándo entrar a operar es más fácil de solucionar mediante el análisis técnico.
+
+###Desventajas del Análisis Técnico
+
+El análisis técnico puede convertirse en una profecía autocumplida. Cuando muchos inversores que utilizan herramientas similares y siguen los mismos conceptos cambian a la vez la oferta y la demanda, pueden provocar que las cotizaciones se muevan en la dirección prevista.
+
+Este trabajo presenta un análisis técnico detallado sobre el uso del indicador Oscilador Estocástico y el ATR para determinar condiciones de compra y venta en el mercado. Los precios de cotización del subyacente seleccionado son descargados desde el bróker Oanda a través del entorno R.
+
+#####Funciones auxiliares
+```{r}
+parser <- function(tobparsed){
+  eval.parent(parse(text=tobparsed));
+}
+
+gm_mean = function(x, na.rm=TRUE){
+  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+}
+
+maxdd <- function(x){
+  top=0;dd=0;
+for(i in 1:length(eq)){
+  top=ifelse(eq[i]> top,eq[i],top);
+  neq=eq[i]/top;
+  if(neq <= 0) next();
+  dd=ifelse(1-neq>dd,1-neq,dd)
+} 
+  return(dd);
+}
+```
+
+```{r}
+cuenta<- function(st,dates,balance=1){
+#
+  parser(paste0("strategy=data.frame(Date=dates,St=st,Balance=0,Equity=0,Margin=0,Free_Margin=0,Margin_Level=NA,Operacion=0,\'R acum\'=0,Op_abiertas=0,Op_ganadoras=0,Op_perdedoras=0,Win_Ratio=NA)"));
+  parser(paste0("strategy$Balance=balance;"));
+  parser(paste0("strategy$Equity=balance;"));
+  parser(paste0("strategy$Free_Margin=balance;"));
+  parser(paste0("strategy$Mensaje[1]=\"Inicio\";"));
+  parser(paste0("strategy$Operacion[1]=\"Inicialización\";"));
+  position<<-0;Asset<<-0;
+  return(strategy)
+  }
+```
+
+```{r}
+pip_value<- function(dp,volume,rate){
+  return(dp*volume/rate) 
+}
+```
+
+
+```{r}
+pkg <- c("base","downloader","dplyr","fBasics","forecast","grid",
+         "gridExtra","httr","jsonlite","lmtest","lubridate","moments",
+         "matrixStats", "PerformanceAnalytics","plyr","plotly","quantmod",
+         "reshape2","RCurl", "stats","scales","tseries",
+         "TTR","TSA","XML","xts","zoo","yaml")
+
+inst <- pkg %in% suppressMessages(installed.packages())
+if(length(pkg[!inst]) > 0) install.packages(pkg[!inst])
+instpackages <- lapply(pkg, library, character.only=TRUE)
+
+
+
+RawGitHub <- "https://raw.githubusercontent.com/IFFranciscoME/"
+ROandaAPI <- paste(RawGitHub,"ROandaAPI/master/ROandaAPI.R",sep="")
+downloader::source_url(ROandaAPI,prompt=FALSE,quiet=TRUE)
+
+
+OA_At <- yaml.load_file(input="C:\\Users\\Tekken\\Google Drive\\Rpython\\quandlkey.yaml")[[3]]    # Account Type
+OA_Ai <- yaml.load_file(input="C:\\Users\\Tekken\\Google Drive\\Rpython\\quandlkey.yaml")[[4]]     # Account ID
+OA_Ak <- yaml.load_file(input="C:\\Users\\Tekken\\Google Drive\\Rpython\\quandlkey.yaml")[[2]]
+```
+
+```{r}
+options(warn = -1)
+InstList <- data.frame(InstrumentsList(OA_At,OA_Ak,OA_Ai))[,c(1,3)]
+OA_In <- InstList[89,1]
+OA_Da <- 17
+OA_Ta <- "America%2FMexico_City"
+OA_Gn <- "D"
+OA_Sd <- "2015-08-01"
+OA_Ed <- "2017-08-01"
+Precios <- HisSpreads(OA_At,OA_Gn,OA_Da,OA_Ta,OA_Ak,OA_In,OA_Sd,OA_Ed,NULL)
+
+```
+
+```{r}
+options(warn = -1)
+Precios$TimeStamp <- as.POSIXct(Precios$TimeStamp)
+```
+
+
+```{r}
+mprecio=as.data.frame(matrix(NA,dim(Precios)[1],4))
+precios=Precios[,seq(2,9)]
+for(i in 1:4){
+  parser(paste('mprecio$V',i,'=as.vector(apply(precios[,c((2*i-1),(2*i))],1,mean))',sep=""))
+  
+  #mprecio$v1=as.vector(apply(precios[,c((2*i-1),(2*i))],1,mean))
+}
+colnames(mprecio)=c("Open","High","Low","Close")
+```
+
+
+```{r}
+
+stk=stoch(mprecio[,c("High","Low","Close")])
+fecha=do.call(rbind,strsplit(as.character(Precios$TimeStamp)," "))[,1]
+```
+
+##ATR
+<p style="text-align: justify;">
+La volatilidad como una herramienta para interpretar la acción del precio y los patrones en el mercado, puede resultar de mucha utilidad para analistas y operadores que tratan de comprender el comportamiento del precio. Uno de los indicadores de volatilidad más populares de la actualidad es el Average True Range, conocido popularmente como ATR. Este indicador tiene un propósito dual y puede utilizarse para identificar puntos de entrada y salida, o para el desarrollo de sistemas de trading completos basados en sus principios.
+
+El ATR (Average True Range, Media del rango verdadero) mide únicamente la volatilidad real del mercado, y no representa ni la tendencia actual ni tampoco cual está siendo la duración de dicha tendencia.
+
+Para calcular el ATR primero comenzamos calculando el (TR-True Range, Rango verdadero) que es el mayor valor de las siguientes opciones.
+
+. La diferencia entre el máximo actual y el mínimo actual.
+
+. La diferencia entre el máximo actual y el cierre anterior.
+
+. La diferencia entre el mínimo actual y el cierre anterior.
+
+Si por ejemplo el mayor valor de estas opciones es la diferencia entre máximo y mínimo actual (opción 1) entonces tendremos que éste será el verdadero rango (TR-True Range), si este valor no es el mayor de los tres entonces deberemos de identificar cual es el mayor de todos y éste será el (TR-True Range).
+
+Para calcular el ATR lo único que debemos de hacer es aplicar un promedio sobre el rango verdadero de los últimos N días. Habitualmente suele ser usado un promedio de 14 datos, tanto para gráficos semanales, como diarios o intra-diarios.
+
+El principio de pronóstico mediante el Average True Range es el siguiente: cuanto más alto sea el valor del indicador, más alta será la posibilidad del cambio de tendencia; y cuanto más bajo sea su valor, más débil será la dirección de la tendencia.
+
+Cálculo del ATR
+
+Por lo general, el ATR se basa en 14 periodos (aunque el trader puede utilizar el número de periodos que desee) y puede ser calculado sobre una base intradiaria, diaria, semanal o mensual. Para este ejemplo, se utilizarán datos diarios para el cálculo del indicador. Debido a que tiene que haber un comienzo, el primer valor del Rango Verdadero es simplemente el Máximo menos el Mínimo, y el primer ATR de 14 días es el promedio de los valores del Rango Verdadero diario de los últimos 14 días. Después de eso, Wilder trató de suavizar los datos mediante la incorporación del valor del ATR para el período anterior.
+
+ATR actual = [(ATR Previo x 13) + Rango Verdadero actual]/14
+
+Por lo tanto, para calcular el ATR actual:
+
+    -Se multiplica el ATR de 14 días previo por 13.
+    -Se adiciona al valor anterior el Rango Verdadero actual.
+    -Se divide el total por 14.
+
+
+
+Cuando se calcula el ATR, hay ciertos aspectos que deben considerarse. En primer lugar, los valores del ATR dependen del punto en donde se comienza. El primer valor del Rango Verdadero es simplemente el Máximo actual menos el Mínimo actual y el primer ATR es un promedio de los primeros 14 valores del Rango Verdadero. Por lo tanto, la fórmula verdadera del ATR no entra en juego hasta el día 15. Aun así, los remanentes de estos dos primeros cálculos persisten y afectan ligeramente los valores del ATR. Incluso el redondeo decimal también puede afectar ligeramente los valores del ATR.
+
+##Oscillador Estocástico y indice de movimiento estocástico (SMI)
+
+El oscilador estocástico es un indicador técnico que le permite al operador reconocer una dirección en un intervalo o rango de precios ubicados entre el máximo y el mínimo en un periodo determinado. El indicador es de tipo momentum, es decir, sigue la velocidad del precio, detectando un cambio de dirección antes de que el precio lo haga.
+
+Las fórmulas generales para calcular los dos parámetros de este indicador son las siguientes:
+
+%K= (Cierre actual-lowest low)/(highest high-lowest low) x 100
+
+%D = Media móvil simple de 3 periodos del %K.
+
+Por ejemplo, suponiendo que el highest high es igual a 75, el lowest low es igual a 65 y el precio de cierre es igual a 74. En este caso el rango entre el highest high y el lowest low es 10 (denominador de la fórmula del %K). El cierre menos el lowest low es 9 (numerador de la formula %K). Cuando dividimos 9 entre 10 obtenemos 0.90 o 90%. El %K se obtiene al multiplicar este número por 100.
+
+###Stochastic Movement Index
+
+El SMI se basa en el punto medio del mismo rango del oscilador estocástico ya mencionado. Además suele estar acompañado de una señal de promedio exponencial para periodos entre 3 y 12. El indicador puede moverse entre +100 y -100, aunque en análisis técnico se considera que por encima de +40 se encuentra en sobrecompra y por debajo de -40 en sobreventa.
+
+Una de las señales que nos da este indicador es el cruce del SMI con su media. Se entiende que cuando el SMI se encuentra por encima de la línea de señal, la tendencia es ascendente y viceversa. Aunque al igual que el estocástico, las señales más importantes que genera son las divergencias entre el precio y el indicador.
+
+$$SMI(q,r,s)=100*\frac{E_s(E_r(SM(q)))}{.5(E_s(E_r(HH:q-LL:q)))}$$
+
+    donde: SM(q) = Close - 0.5 (HH:q + LL:q)
+    Er = EMA periodo r 
+    Es = EMA periodo s 
+    HH:q = máximo máximo en un periodo q 
+    LL:q = mínimo mínimo en un periodo q
+
+
+</p>
+
+##Estrategia
+
+    Utilizar el ATR como filtro de volatilidad.
+    Establecer límites de sobrecompra y sobreventa para SMI
+    Cruce de SMI con su promedio dentro de las bandas se sobrecompra o sobreventa representa señal de cambio de tendencia.
+    Cruce de SMI y su PM más de límite superior (35) hacia abajo representa una venta.
+    Cruce de SMI y su PM más de límite inferior (-35) hacia arriba representa compra.
+    Las señales de apertura son las mismas que las de cierre en la posición contraria.
+    Revertir posiciones cuando las señales lo indiquen.
+    
+
+
+###Parametros     
+
+    Capital inicial=10_000
+    q=21
+    r=3
+    s=5
+    ATR=5
+    límite del ATR=.075
+    limite superior e inferior de SMI:[-35,35]
+    Apalancamiento=50
+    Tamaño de posición respecto a 'Free Margin'=.1
+
+```{r}
+
+
+K=100000;n=21;d=3;dd=5;sig=5;atr=5;thrsh=.075;upp_lim=35;low_lim=-35;flag=0;inst="USD_MXN";lever=50;exposure=.1*lever;
+```
+
+
+
+```{r, fig.height=6,fig.width=8,fig.align="center"}
+
+p<- plot_ly(x=as.list(fecha),y=mprecio$Close,name=colnames(mprecio)[4],type='scatter', mode='lines',line=list(color="black")) %>%
+  layout(title=inst)
+p
+```
+
+
+```{r, fig.height=6,fig.width=8,fig.align="center"}
+p1 <- mprecio %>%
+  plot_ly(x = fecha, type="candlestick",
+          open = ~Open, close = ~Close,
+          high = ~High, low = ~Low) %>%
+  layout(title = inst)
+p1
+```
+
+```{r, fig.height=6,fig.width=8,fig.align="center"}
+
+xts1=xts(x=mprecio,order.by = as.POSIXct(as.data.frame(fecha)$fecha))
+chartSeries(xts1,TA=paste0("addATR(n=",n,");addSMI(",n,",",d,",",dd,",",sig,")"))
+
+```
+
+
+```{r}
+
+control = data.frame(ATR(xts1,n=atr)$atr,SMI(xts1[,c(2,3,4)],n,d,dd,sig),VC=NA,Cruce=NA,Intervalo=NA,Int_diff=NA,Posicion=NA)
+control$VC=ifelse((control$SMI-control$signal)>0, 1, 0)
+control$Cruce=c(NA,diff(control$VC))
+control$Posicion[n]=0
+
+
+```
+
+
+
+
+```{r}
+
+for(i in (n):nrow(control)){
+
+  if(control$SMI[i] > upp_lim && upp_lim < control$signal[i]){
+    control$Intervalo[i]= 1
+  }else if(control$SMI[i] < low_lim && control$signal[i] < low_lim){
+    control$Intervalo[i]= -1
+    }else{
+      control$Intervalo[i]= 0
+    }
+}
+control$Int_diff=c(NA,diff(control$Intervalo))
+
+```
+
+
+```{r}
+for(i in (n+1):nrow(control)){
+
+  if((control$Intervalo[i-1] != 0 || control$Intervalo[i] != 0) && control$Cruce[i] != 0){
+    flag = control$Cruce[i]
+    }
+  if(control$atr[i] > thrsh ){
+    
+    if(control$Int_diff[i] != 0){
+      if(control$Int_diff[i] == -1 && flag == -1){
+        
+        if(control$Posicion[i-1] == 1 || control$Posicion[i-1] == 0){
+         control$Posicion[i]=-1
+         flag = 0
+        }else{
+          control$Posicion[i]=control$Posicion[i-1]
+         }
+      }else if(control$Int_diff[i] == 1  && flag == 1){
+        
+        if(control$Posicion[i-1] == -1 || control$Posicion[i-1] == 0){
+          control$Posicion[i] = 1
+          flag = 0
+        }else{
+          control$Posicion[i] = control$Posicion[i-1]
+        }
+          
+      }else{
+          control$Posicion[i] = control$Posicion[i-1]
+      }
+    }else{
+      control$Posicion[i] = control$Posicion[i-1]
+      }
+  }else{
+      control$Posicion[i] = control$Posicion[i-1]
+  }
+  if(control$Intervalo[i] == 0){
+    flag=0
+  }
+}
+control$Pos_diff=c(NA,diff(control$Posicion))
+
+```
+
+
+
+```{r}
+options(warn = -1)
+Posiciones=data.frame(Heartbeat=Precios$TimeStamp,Close_B=Precios$Close_Bid,Close_A=Precios$Close_Ask,Type=factor(control$Posicion,levels = c(1,0,-1),labels = c("buy","standby","sell")),Volume=0,Price=0,PIP_value=0,Profit=0)
+PAIR <- cuenta(st = Precios$Close_Ask, dates = Precios$TimeStamp, balance = K)
+PAIR <- cbind(Precios$TimeStamp,Precios[,c(8,9)],PAIR[,seq(3,14)])
+```
+
+
+```{r}
+options(warn = -1)
+
+
+PAIR$Operacion[1]="Go"
+for(i in (n+1):nrow(control)){ #nrow(control)
+  PAIR$Balance[i]=PAIR$Balance[i-1]
+  
+  
+  if(control$Pos_diff[i]!=0){ #Se hace una operación
+    if(control$Pos_diff[i]>0){#Posición larga
+      if(control$Pos_diff[i]==2){
+        PAIR$Operacion[i]="Long reversal"#Cerrar posición anterior
+        Posiciones$PIP_value[i]=pip_value(.0001,Posiciones$Volume[i-1],Posiciones$Close_A[i])
+        Posiciones$Profit[i]=Posiciones$PIP_value[i]*(Posiciones$Price[i-1]-Posiciones$Close_A[i])*10000
+        PAIR$Balance[i]=PAIR$Balance[i]+Posiciones$Profit[i]
+        PAIR$Equity[i]=PAIR$Balance[i]+Posiciones$Profit[i]
+        PAIR$Free_Margin[i]=PAIR$Equity[i]-PAIR$Margin[i]
+        PAIR$Margin_Level[i]=(PAIR$Free_Margin[i]/PAIR$Margin[i]+1)*100
+        if(Posiciones$Profit[i]>0){PAIR$Op_ganadoras[i]=PAIR$Op_ganadoras[i-1]+1
+        PAIR$Op_perdedoras[i]=PAIR$Op_perdedoras[i-1]
+        }
+        else {PAIR$Op_perdedoras[i]=PAIR$Op_perdedoras[i-1]+1
+              PAIR$Op_ganadoras[i]=PAIR$Op_ganadoras[i-1]
+        }
+        
+        
+        
+      }
+      
+      #abrir posición larga
+      
+        PAIR$Op_abiertas[i]=PAIR$Op_abiertas[i-1]+1
+        Posiciones$Price[i]=Posiciones$Close_A[i]
+        PAIR$Free_Margin[i]=PAIR$Equity[i]-PAIR$Margin[i]
+        Posiciones$Volume[i]=PAIR$Free_Margin[i]*exposure
+        PAIR$Margin[i]=Posiciones$Volume[i]/lever
+        Posiciones$PIP_value[i]=pip_value(.0001,Posiciones$Volume[i],Posiciones$Close_B[i])
+        
+        
+        
+        
+    }else{ #posición corta
+      
+      if(control$Pos_diff[i]== -2){
+        PAIR$Operacion[i]="Short reversal"#Cerrar posición anterior
+       Posiciones$PIP_value[i]=pip_value(.0001,Posiciones$Volume[i-1],Posiciones$Close_B[i])
+       Posiciones$Profit[i]=Posiciones$PIP_value[i]*(Posiciones$Close_B[i]-Posiciones$Price[i-1])*10000
+       PAIR$Balance[i]=PAIR$Balance[i]+Posiciones$Profit[i]
+       PAIR$Equity[i]=PAIR$Balance[i]+Posiciones$Profit[i]
+       PAIR$Free_Margin[i]=PAIR$Equity[i]-PAIR$Margin[i]
+       PAIR$Margin_Level[i]=(PAIR$Free_Margin[i]/PAIR$Margin[i]+1)*100
+       if(Posiciones$Profit[i]>0){PAIR$Op_ganadoras[i]=PAIR$Op_ganadoras[i-1]+1
+        PAIR$Op_perdedoras[i]=PAIR$Op_perdedoras[i-1]
+        }
+        else {PAIR$Op_perdedoras[i]=PAIR$Op_perdedoras[i-1]+1
+              PAIR$Op_ganadoras[i]=PAIR$Op_ganadoras[i-1]
+        }
+       
+       
+       }
+       
+      #abrir posición corta
+      
+      PAIR$Op_abiertas[i]=PAIR$Op_abiertas[i-1]+1
+      Posiciones$Price[i]=Posiciones$Close_B[i]
+      PAIR$Free_Margin[i]=PAIR$Equity[i]-PAIR$Margin[i]
+      Posiciones$Volume[i]=PAIR$Free_Margin[i]*exposure
+      PAIR$Margin[i]=Posiciones$Volume[i]/lever
+      Posiciones$PIP_value[i]=pip_value(.0001,Posiciones$Volume[i],Posiciones$Close_A[i])
+      
+      
+    }
+      
+    
+  }else{ #No se registra operación
+    PAIR$Operacion[i]="Standby"
+    PAIR$Op_abiertas[i]=PAIR$Op_abiertas[i-1]
+    PAIR$Op_ganadoras[i]=PAIR$Op_ganadoras[i-1]
+    PAIR$Op_perdedoras[i]=PAIR$Op_perdedoras[i-1]
+    PAIR$Win_Ratio[i]=PAIR$Win_Ratio[i-1]
+    Posiciones$Volume[i]=Posiciones$Volume[i-1]
+    Posiciones$Price[i]=Posiciones$Price[i-1]
+    PAIR$Margin[i]=PAIR$Margin[i-1]
+  }
+  
+  if(Posiciones$Type[i]=='buy') {Posiciones$PIP_value[i]=pip_value(.0001,Posiciones$Volume[i],Posiciones$Close_B[i])
+  }else Posiciones$PIP_value[i]=pip_value(.0001,Posiciones$Volume[i],Posiciones$Close_A[i])
+  if(Posiciones$Type[i]=='buy'){Posiciones$Profit[i]=Posiciones$PIP_value[i]*(Posiciones$Close_B[i]-Posiciones$Price[i])*10000
+  }else Posiciones$Profit[i]=Posiciones$PIP_value[i]*(Posiciones$Price[i]-Posiciones$Close_A[i])*10000
+  PAIR$Equity[i]=PAIR$Balance[i]+Posiciones$Profit[i]
+  PAIR$Free_Margin[i]=PAIR$Equity[i]-PAIR$Margin[i]
+  PAIR$Margin_Level[i]=(PAIR$Free_Margin[i]/PAIR$Margin[i]+1)*100
+  PAIR$Win_Ratio[i]=PAIR$Op_ganadoras[i]/(PAIR$Op_ganadoras[i]+PAIR$Op_perdedoras[i])*100
+}
+PAIR$Operacion[seq(2,n)]='Standby'
+PAIR$Operacion[which(PAIR$Operacion==0)]='First Position'
+PAIR$R.acum=c(1,cumprod(PAIR$Equity[-1]/PAIR$Equity[-nrow(PAIR)]))
+
+```
+
+
+```{r, fig.height=6,fig.width=8,fig.align="center"}
+options(warn = -1)
+plot_ly(x=PAIR$`Precios$TimeStamp`,y=PAIR$Equity,name="P&L",type='scatter', mode='lines') %>%
+  layout(title="Equity over time")
+```
+```{r, fig.height=6,fig.width=8,fig.align="center"}
+options(warn = -1)
+plot_ly(x=PAIR$`Precios$TimeStamp`,y=PAIR$R.acum,name="P&L",type='scatter', mode='lines') %>%
+  layout(title="Rolled returns")
+```
+
+```{r}
+options(warn = -1)
+Posiciones[which(c(0,diff(as.numeric(Posiciones$Type)))!=0),-8]
+```
+
+ Metrics
+```{r}
+options(warn = -1)
+
+ret=c(1,PAIR$Equity[-1]/PAIR$Equity[-nrow(PAIR)])[70:nrow(PAIR)]-1
+eq=PAIR$Equity[70:nrow(PAIR)]
+sprintf("sharpe %f", mean(ret)/sd(ret))
+sprintf("arithmetic mean %f",mean(ret))
+sprintf("geometric mean %f",gm_mean(ret+1)-1)
+sprintf("max drawdown %f",maxdd(eq))
+```
+```{r}
+#hist(ret)
+```
+
+
+
+##Conclusión:
+
+Los factores principales para poder analizar el comportamiento de una divisa son la volatilidad y la tendencia. Estas son las razones por las que el Oscilador Estocástico (indicador tipo momentum) y el ATR (indicador que mide la volatilidad del mercado) son la perfecta combinación para determinar una tendencia o un cambio de la misma. Es decir, mientras el oscilador estocástico nos va indicando si la tendencia  cambiará de dirección, con el ATR podemos fijar objetivos para tomar el profit, stop loss o incluso seleccionar una proporción del capital a invertir conforme se mueve las señales del ATR para arriesgar el capital conforme a cierto nivel de volatilidad. El empleo primordial del ATR en esta estrategía es filtrar señales que no alcanzan cierto nivel de volatilidad.
+
+Utilizando ATR se garantiza que hay un cierto nivel de volatilidad, tratando de eliminar periodos de la sesión donde a pesar de tener señales, la volatilidad es tan baja que el spread y las comisiones anulan la posibilidad de obtener utilidad o inclusive incurrir en una señal falsa que conlleve a entrar en contra del mercado. Sin embargo al ser una estrategia diaria la volatilidad es relativamente alta, no obstante si fuera trading intradía el efecto sería más notorio. 
+
+El oscilador SMI se utilizó para marcar fines de tendencia, implementándolo en una estrategia de reversal. Podemos ver que en periodos donde la serie adopta una tendencia marcada y prolongada, la estrategía que busca que los precios, si bien no son estacionarios, cambien de tendencia en sentido contrario.
+
+
+Finalmente, con este trabajo demostramos que el análisis técnico es una herramienta práctica y fácil de entender que mejora los beneficios de un portafolio o un activo dado. Es un hecho que el análisis técnico es una técnica de las más utilizadas por su simplicidad, sin embargo, no es una metodología cien por ciento eficiente, por eso es necesario incluir varios métodos para predecir como son los modelos cuantitativos entre otros para validar las señales y asegurar un movimiento a una dirección determinada.
+
+Referencias: https://www.tecnicasdetrading.com/2017/02/indicador-average-true-range-atr.html https://www.tecnicasdetrading.com/2010/06/el-oscilador-estocastico.html
+
